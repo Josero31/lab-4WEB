@@ -1,0 +1,14 @@
+{
+  "name": "lab-4-web",
+  "version": "1.0.0",
+  "description": "Laboratorio 4 - Sistemas y Tecnologías Web",
+  "main": "servidor-corregido.js",
+  "type": "module",
+  "scripts": {
+    "start": "node servidor-corregido.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
