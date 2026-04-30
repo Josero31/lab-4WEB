@@ -73,7 +73,7 @@ app.get("/", (req, res) => {
     <h2>CRUD — /api/pokemon</h2>
     <table>
       <tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr>
-      <tr><td class="get">GET</td><td><code>/api/pokemon</code></td><td>Todos los pokémon (filtro: ?tipo=fuego)</td></tr>
+      <tr><td class="get">GET</td><td><code>/api/pokemon</code></td><td>Todos los pokémon (filtros: ?tipo=fuego, ?nivel=20)</td></tr>
       <tr><td class="get">GET</td><td><code>/api/pokemon/:id</code></td><td>Pokémon por ID</td></tr>
       <tr><td class="post">POST</td><td><code>/api/pokemon</code></td><td>Crear pokémon</td></tr>
       <tr><td class="put">PUT</td><td><code>/api/pokemon/:id</code></td><td>Reemplazar pokémon completo</td></tr>
@@ -112,14 +112,23 @@ app.get("/api/status", (req, res) => {
 // ─── CRUD /api/pokemon ────────────────────────────────────────────────────────
 
 app.get("/api/pokemon", (req, res) => {
-  const { tipo } = req.query;
+  const { tipo, nivel } = req.query;
+  let resultado = pokemon;
+
   if (tipo) {
-    const filtrados = pokemon.filter(
+    resultado = resultado.filter(
       (p) => p.tipo.toLowerCase() === tipo.toLowerCase()
     );
-    return res.json({ ok: true, data: filtrados });
   }
-  res.json({ ok: true, data: pokemon });
+
+  if (nivel) {
+    const nivelMin = parseInt(nivel);
+    if (!isNaN(nivelMin)) {
+      resultado = resultado.filter((p) => p.nivel >= nivelMin);
+    }
+  }
+
+  res.json({ ok: true, data: resultado });
 });
 
 app.get("/api/pokemon/:id", (req, res) => {
