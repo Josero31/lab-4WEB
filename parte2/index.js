@@ -128,54 +128,70 @@ app.get("/api/pokemon/:id", (req, res) => {
   res.json({ ok: true, data: found });
 });
 
-app.post("/api/pokemon", (req, res) => {
-  const faltantes = ["nombre", "tipo", "nivel", "hp", "ataques"].filter(
-    (campo) => req.body[campo] === undefined
-  );
-  if (faltantes.length > 0) {
-    return res.status(400).json({
-      ok: false,
-      error: `Faltan campos obligatorios: ${faltantes.join(", ")}`,
-    });
+app.post("/api/pokemon", (req, res, next) => {
+  try {
+    const faltantes = ["nombre", "tipo", "nivel", "hp", "ataques"].filter(
+      (campo) => req.body[campo] === undefined
+    );
+    if (faltantes.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        error: `Faltan campos obligatorios: ${faltantes.join(", ")}`,
+      });
+    }
+    const { nombre, tipo, nivel, hp, ataques } = req.body;
+    const nuevo = { id: crypto.randomUUID(), nombre, tipo, nivel, hp, ataques };
+    pokemon.push(nuevo);
+    res.status(201).json({ ok: true, data: nuevo });
+  } catch (err) {
+    next(err);
   }
-  const { nombre, tipo, nivel, hp, ataques } = req.body;
-  const nuevo = { id: crypto.randomUUID(), nombre, tipo, nivel, hp, ataques };
-  pokemon.push(nuevo);
-  res.status(201).json({ ok: true, data: nuevo });
 });
 
-app.put("/api/pokemon/:id", (req, res) => {
-  const idx = pokemon.findIndex((p) => p.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
+app.put("/api/pokemon/:id", (req, res, next) => {
+  try {
+    const idx = pokemon.findIndex((p) => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
 
-  const faltantes = ["nombre", "tipo", "nivel", "hp", "ataques"].filter(
-    (campo) => req.body[campo] === undefined
-  );
-  if (faltantes.length > 0) {
-    return res.status(400).json({
-      ok: false,
-      error: `PUT requiere todos los campos. Faltan: ${faltantes.join(", ")}`,
-    });
+    const faltantes = ["nombre", "tipo", "nivel", "hp", "ataques"].filter(
+      (campo) => req.body[campo] === undefined
+    );
+    if (faltantes.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        error: `PUT requiere todos los campos. Faltan: ${faltantes.join(", ")}`,
+      });
+    }
+    const { nombre, tipo, nivel, hp, ataques } = req.body;
+    pokemon[idx] = { id: req.params.id, nombre, tipo, nivel, hp, ataques };
+    res.json({ ok: true, data: pokemon[idx] });
+  } catch (err) {
+    next(err);
   }
-  const { nombre, tipo, nivel, hp, ataques } = req.body;
-  pokemon[idx] = { id: req.params.id, nombre, tipo, nivel, hp, ataques };
-  res.json({ ok: true, data: pokemon[idx] });
 });
 
-app.patch("/api/pokemon/:id", (req, res) => {
-  const idx = pokemon.findIndex((p) => p.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
+app.patch("/api/pokemon/:id", (req, res, next) => {
+  try {
+    const idx = pokemon.findIndex((p) => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
 
-  pokemon[idx] = { ...pokemon[idx], ...req.body, id: req.params.id };
-  res.json({ ok: true, data: pokemon[idx] });
+    pokemon[idx] = { ...pokemon[idx], ...req.body, id: req.params.id };
+    res.json({ ok: true, data: pokemon[idx] });
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.delete("/api/pokemon/:id", (req, res) => {
-  const idx = pokemon.findIndex((p) => p.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
+app.delete("/api/pokemon/:id", (req, res, next) => {
+  try {
+    const idx = pokemon.findIndex((p) => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, error: "Pokémon no encontrado" });
 
-  const eliminado = pokemon.splice(idx, 1)[0];
-  res.json({ ok: true, data: eliminado });
+    const eliminado = pokemon.splice(idx, 1)[0];
+    res.json({ ok: true, data: eliminado });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ─── Ruta 404 ─────────────────────────────────────────────────────────────────
@@ -186,6 +202,16 @@ app.use((req, res) => {
     ruta: req.originalUrl,
     metodo: req.method,
     sugerencia: "Visita / para ver los endpoints disponibles",
+  });
+});
+
+// ─── Manejador de errores 500 ─────────────────────────────────────────────────
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    ok: false,
+    error: "Error interno del servidor",
   });
 });
 
