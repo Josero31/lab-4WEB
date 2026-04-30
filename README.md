@@ -1,111 +1,131 @@
-# lab-4WEB
-Node API
+# Laboratorio 4 — JavaScript API con Node.js y Express
+
+Proyecto del curso **Sistemas y Tecnologías Web** que cubre dos partes: depuración de un servidor HTTP nativo con errores intencionales, y construcción de una REST API completa de gestión de Pokémon con Express.
 
 ---
 
-# Solución — Parte 1: Depuración del Servidor Roto
+## Estructura del proyecto
 
-Archivo original: `Laboratorio_4_servidor_malo.js`  
-Archivo corregido: `servidor-corregido.js`
-
----
-
-### Error #1: Content-Type con sintaxis incorrecta
-
-**Ubicación:** Línea 15 del archivo original  
-**Tipo de error:** HTTP  
-**Qué estaba mal:** El valor del header `Content-Type` usaba un guion (`-`) en lugar de una barra diagonal (`/`), lo que produce un MIME type inválido que los clientes no pueden interpretar correctamente.  
-**Cómo lo corregí:**
-
-```js
-// Antes
-res.writeHead(200, { "Content-Type": "application-json" })
-
-// Después
-res.writeHead(200, { "Content-Type": "application/json" })
+```
+lab-4WEB/
+├── api/
+│   └── index.js              # API principal (Pokédex)
+├── basic_template/
+│   └── basic_template/
+│       └── index.js          # Template de ejemplo (blog API)
+├── servidor-malo.js          # Servidor HTTP con 6 bugs intencionales
+├── servidor-corregido.js     # Servidor HTTP corregido
+├── datos.json                # Datos de ejemplo (información del estudiante)
+├── SOLUCION.md               # Documentación de los 6 bugs encontrados y corregidos
+└── PRUEBAS.md                # Evidencia de pruebas con capturas de Thunder Client
 ```
 
 ---
 
-### Error #2: Falta `await` en operación asíncrona
+## Parte 1 — Depuración de servidor HTTP
 
-**Ubicación:** Línea 22 del archivo original  
-**Tipo de error:** Asincronía  
-**Qué estaba mal:** `fs.readFile` devuelve una `Promise`. Sin `await`, la variable `texto` almacena el objeto Promise en lugar del contenido del archivo, por lo que la respuesta enviada al cliente es `{}` en vez de los datos reales.  
-**Cómo lo corregí:**
+`servidor-malo.js` contiene un servidor HTTP escrito con el módulo nativo `node:http` que tiene **6 errores intencionales** de distintas categorías. El objetivo fue identificarlos, corregirlos y documentarlos.
 
-```js
-// Antes
-const texto = fs.readFile(filePath, "utf-8")
+Los errores encontrados y su solución están documentados en [SOLUCION.md](SOLUCION.md). `servidor-corregido.js` contiene el servidor con todos los errores resueltos.
 
-// Después
-const texto = await fs.readFile(filePath, "utf-8")
-```
+### Tipos de errores trabajados
 
----
-
-### Error #3: Double-encoding del JSON con `JSON.stringify`
-
-**Ubicación:** Línea 24 del archivo original  
-**Tipo de error:** Lógica  
-**Qué estaba mal:** `fs.readFile` con encoding `"utf-8"` ya devuelve el contenido del archivo como string. Como `datos.json` es JSON válido, ese string ya puede enviarse directamente. Aplicar `JSON.stringify()` sobre un string lo convierte en una cadena entrecomillada y con caracteres escapados, produciendo JSON inválido en la respuesta.  
-**Cómo lo corregí:**
-
-```js
-// Antes
-res.end(JSON.stringify(texto))
-
-// Después
-res.end(texto)
-```
+| # | Tipo de error | Descripción |
+|---|---------------|-------------|
+| 1 | MIME type incorrecto | `Content-Type` con valor erróneo para JSON |
+| 2 | `await` faltante | Lectura asíncrona de archivo sin `await` |
+| 3 | Doble codificación JSON | `JSON.stringify` aplicado dos veces |
+| 4 | Status code incorrecto | Respuestas exitosas con código de error |
+| 5 | Error de sintaxis | Código que impide arrancar el servidor |
+| 6 | Lógica de enrutamiento | Rutas que nunca se alcanzan |
 
 ---
 
-### Error #4: Código de estado HTTP incorrecto para ruta no encontrada
+## Parte 2 — REST API Pokédex
 
-**Ubicación:** Línea 28 del archivo original  
-**Tipo de error:** HTTP  
-**Qué estaba mal:** Se respondía con código `200 OK` cuando ninguna ruta coincidía, lo cual es semánticamente incorrecto. El estándar HTTP define `404 Not Found` para indicar que el recurso solicitado no existe.  
-**Cómo lo corregí:**
+API RESTful construida con **Express.js** que implementa un CRUD completo sobre una colección de Pokémon en memoria, con filtrado por query params, validación de datos, manejo de errores y respuestas HTTP con los códigos correctos.
 
-```js
-// Antes
-res.writeHead(200, { "Content-Type": "text/plain" })
+### Stack tecnológico
 
-// Después
-res.writeHead(404, { "Content-Type": "text/plain" })
-```
+| Componente | Tecnología |
+|------------|------------|
+| Runtime | Node.js (ES Modules) |
+| Framework | Express.js ^5.2.1 |
+| IDs | `crypto.randomUUID()` |
+| Almacenamiento | En memoria (array en proceso) |
+| Testing | Thunder Client |
 
 ---
 
-### Error #5: Paréntesis de cierre faltante en `http.createServer`
+## Endpoints
 
-**Ubicación:** Línea 30 del archivo original  
-**Tipo de error:** Sintaxis  
-**Qué estaba mal:** La llamada a `http.createServer(async (req, res) => { ... }` nunca se cerraba con el paréntesis de la función `createServer`. Solo se cerraba la llave `}` de la función callback, pero faltaba el `)` que cierra la llamada exterior.  
-**Cómo lo corregí:**
+### Rutas informativas
 
-```js
-// Antes
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/` | Página HTML con documentación de la API |
+| `GET` | `/info` | Metadata: curso, versión, tecnologías |
+| `GET` | `/saludo` | Mensaje de bienvenida |
+| `GET` | `/api/status` | Estado del servidor y timestamp actual |
+
+### CRUD — `/api/pokemon`
+
+| Método | Ruta | Descripción | Status exitoso |
+|--------|------|-------------|----------------|
+| `GET` | `/api/pokemon` | Listar todos los Pokémon | `200` |
+| `GET` | `/api/pokemon?tipo=fuego` | Filtrar por tipo | `200` |
+| `GET` | `/api/pokemon?nivel=20` | Filtrar por nivel mínimo | `200` |
+| `GET` | `/api/pokemon/:id` | Obtener un Pokémon por ID | `200` |
+| `POST` | `/api/pokemon` | Crear nuevo Pokémon | `201` |
+| `PUT` | `/api/pokemon/:id` | Reemplazar Pokémon completo | `200` |
+| `PATCH` | `/api/pokemon/:id` | Actualizar campos parcialmente | `200` |
+| `DELETE` | `/api/pokemon/:id` | Eliminar Pokémon | `200` |
+
+### Manejo de errores
+
+| Situación | Status |
+|-----------|--------|
+| Pokémon no encontrado | `404` |
+| Campos requeridos faltantes en `POST`/`PUT` | `400` |
+| Ruta no existente | `404` |
+| Error interno del servidor | `500` |
+
+---
+
+## Modelo de dato — Pokémon
+
+```json
+{
+  "id": "uuid-generado-automaticamente",
+  "nombre": "Charizard",
+  "tipo": "fuego",
+  "nivel": 36,
+  "hp": 78,
+  "ataques": ["lanzallamas", "vuelo", "garra dragón"]
 }
-
-// Después
-})
 ```
+
+**Campos requeridos para `POST`:** `nombre`, `tipo`, `nivel`, `hp`, `ataques`
 
 ---
 
-### Error #6: Paréntesis de cierre faltante en `server.listen`
+## Instalación y uso
 
-**Ubicación:** Línea 34 del archivo original  
-**Tipo de error:** Sintaxis  
-**Qué estaba mal:** Igual que el error anterior, `server.listen(PORT, () => { ... }` cerraba la llave `}` del callback pero omitía el `)` de cierre de `listen(`. Esto genera un `SyntaxError` al ejecutar el archivo.  
-**Cómo lo corregí:**
+```bash
+# Instalar dependencias
+npm install
 
-```js
-// Antes
-}
+# Iniciar la API Pokédex
+node api/index.js
 
-// Después
-})
+# Iniciar el servidor corregido (Parte 1)
+node servidor-corregido.js
 ```
+
+La API queda disponible en `http://localhost:3000`.
+
+---
+
+## Pruebas
+
+Las pruebas de todos los endpoints fueron realizadas con **Thunder Client** y están documentadas con capturas de pantalla en [PRUEBAS.md](PRUEBAS.md).
