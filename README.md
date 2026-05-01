@@ -111,18 +111,99 @@ API RESTful construida con **Express.js** que implementa un CRUD completo sobre 
 
 ## Instalación y uso
 
+### Requisitos previos
+
+- [Node.js](https://nodejs.org/) v18 o superior (se usan ES Modules nativos y `crypto.randomUUID()`)
+- npm (viene incluido con Node.js)
+
+Verificá tu versión con:
+
 ```bash
-# Instalar dependencias
+node -v   # debe ser >= 18
+npm -v
+```
+
+---
+
+### 1. Clonar el repositorio
+
+```bash
+git clone <url-del-repositorio>
+cd lab-4WEB
+```
+
+---
+
+### 2. Instalar dependencias
+
+```bash
 npm install
+```
 
-# Iniciar la API Pokédex
-node api/index.js
+Esto instala **Express.js** (única dependencia externa del proyecto).
 
-# Iniciar el servidor corregido (Parte 1)
-node servidor-corregido.js
+---
+
+### 3. Correr el proyecto
+
+#### Parte 2 — API Pokédex (Express)
+
+```bash
+npm start
+# equivalente a: node api/index.js
 ```
 
 La API queda disponible en `http://localhost:3000`.
+
+Podés verificar que está corriendo abriendo `http://localhost:3000` en el navegador o ejecutando:
+
+```bash
+curl http://localhost:3000/api/status
+```
+
+#### Parte 1 — Servidor HTTP corregido
+
+```bash
+npm run servidor
+# equivalente a: node servidor-corregido.js
+```
+
+Este servidor también corre en `http://localhost:3000`. **No lo inicies al mismo tiempo que la API**, ya que ambos usan el mismo puerto.
+
+---
+
+### 4. Probar los endpoints
+
+Con la API corriendo, podés probar los endpoints desde la terminal:
+
+```bash
+# Listar todos los Pokémon
+curl http://localhost:3000/api/pokemon
+
+# Filtrar por tipo
+curl "http://localhost:3000/api/pokemon?tipo=fuego"
+
+# Filtrar por nivel mínimo
+curl "http://localhost:3000/api/pokemon?nivel=20"
+
+# Crear un Pokémon nuevo
+curl -X POST http://localhost:3000/api/pokemon \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Gengar","tipo":"fantasma","nivel":30,"hp":60,"ataques":["Bola sombra","Hipnosis"]}'
+
+# Obtener un Pokémon por ID (reemplazá <id> por un UUID real)
+curl http://localhost:3000/api/pokemon/<id>
+
+# Actualizar parcialmente
+curl -X PATCH http://localhost:3000/api/pokemon/<id> \
+  -H "Content-Type: application/json" \
+  -d '{"nivel":35}'
+
+# Eliminar
+curl -X DELETE http://localhost:3000/api/pokemon/<id>
+```
+
+También podés usar **Thunder Client** (VS Code), **Postman** o cualquier cliente HTTP. Las pruebas completas están documentadas en [PRUEBAS.md](PRUEBAS.md).
 
 ---
 
